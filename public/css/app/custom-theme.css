@@ -1,0 +1,47 @@
+@layer components {
+    /* Kustomisasi sidebar */
+    .fi-sidebar {
+        @apply shadow-md;
+    }
+    
+    /* Kustomisasi grup navigasi */
+    .fi-sidebar-group {
+        @apply mb-3 rounded-md overflow-hidden;
+    }
+    
+    .fi-sidebar-group-label {
+        @apply text-sm font-bold uppercase tracking-wider;
+    }
+    
+    /* Kustomisasi item navigasi */
+    .fi-sidebar-item {
+        @apply transition-all duration-200 ease-in-out;
+    }
+    
+    .fi-sidebar-item-active {
+        @apply border-l-4 border-amber-500;
+    }
+    
+    /* Kustomisasi ikon */
+    .fi-sidebar-item-icon {
+        @apply transition-all duration-200;
+    }
+    
+    .fi-sidebar-item:hover .fi-sidebar-item-icon {
+        @apply transform scale-110;
+    }
+    
+    /* Animasi untuk dropdown */
+    .fi-sidebar-group-items {
+        @apply transition-all duration-300 ease-in-out;
+    }
+    
+    /* Kustomisasi untuk mode gelap */
+    .dark .fi-sidebar {
+        @apply bg-gray-900;
+    }
+    
+    .dark .fi-sidebar-item-active {
+        @apply bg-gray-800 border-amber-400;
+    }
+}
