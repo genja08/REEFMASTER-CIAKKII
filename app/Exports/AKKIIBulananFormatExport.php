@@ -100,23 +100,38 @@ class AKKIIBulananFormatExport implements FromCollection, WithEvents, WithTitle
                 for ($i = 0; $i < count($citesHeaderLabels); $i++) {
                     $r = $citesInfoStartRow + $i;
                     $sheet->setCellValue("A{$r}", $citesHeaderLabels[$i]);
+                    $sheet->mergeCells("A{$r}:B{$r}");
                     $sheet->getStyle("A{$r}")->getFont()->setBold(true);
                 }
 
+                // Freeze panes so that the CITES info and main headers stay visible when scrolling
+                // Freeze just below the last CITES info row and main table headers (+1 more row)
+                $freezeRow = $citesInfoStartRow + count($citesHeaderLabels) + 3; // +1 blank, +1 header, +1 extra row
+                $sheet->freezePane("C{$freezeRow}");
+
                 // Buat kolom untuk setiap dokumen CITES
-                $colDataIndex = 2; // Data starts from column B
+                $colDataIndex = 3; // Data starts from column C
                 foreach ($citesGroups as $cites) {
                     $colLetter = Coordinate::stringFromColumnIndex($colDataIndex);
-                    $sheet->setCellValue("{$colLetter}" . ($citesInfoStartRow + 0), $cites->nomor_cites);
-                    $sheet->setCellValue("{$colLetter}" . ($citesInfoStartRow + 1), $cites->tanggal_terbit ? date('d-M-y', strtotime($cites->tanggal_terbit)) : '-');
-                    $sheet->setCellValue("{$colLetter}" . ($citesInfoStartRow + 2), $cites->tanggal_expired ? date('d-M-y', strtotime($cites->tanggal_expired)) : '-');
-                    $sheet->setCellValue("{$colLetter}" . ($citesInfoStartRow + 3), $cites->tanggal_ekspor ? date('d-M-y', strtotime($cites->tanggal_ekspor)) : '-');
-                    $sheet->setCellValue("{$colLetter}" . ($citesInfoStartRow + 4), $cites->no_awb ?? '-');
-                    $sheet->setCellValue("{$colLetter}" . ($citesInfoStartRow + 5), $cites->tujuan ?? '-');
-                    $sheet->setCellValue("{$colLetter}" . ($citesInfoStartRow + 6), $cites->no_aju ?? '-');
-                    $sheet->setCellValue("{$colLetter}" . ($citesInfoStartRow + 7), $cites->no_pendaftaran ?? '-');
-                    $sheet->setCellValue("{$colLetter}" . ($citesInfoStartRow + 8), $cites->tanggal_pendaftaran ? date('d-M-y', strtotime($cites->tanggal_pendaftaran)) : '-');
-                    $colDataIndex++;
+                    // Merge 3 columns to the right for each CITES info cell
+                    $mergeEndColLetter = Coordinate::stringFromColumnIndex($colDataIndex + 2);
+                    for ($i = 0; $i < count($citesHeaderLabels); $i++) {
+                        $row = $citesInfoStartRow + $i;
+                        $value = match ($i) {
+                            0 => $cites->nomor_cites,
+                            1 => $cites->tanggal_terbit ? date('d-M-y', strtotime($cites->tanggal_terbit)) : '-',
+                            2 => $cites->tanggal_expired ? date('d-M-y', strtotime($cites->tanggal_expired)) : '-',
+                            3 => $cites->tanggal_ekspor ? date('d-M-y', strtotime($cites->tanggal_ekspor)) : '-',
+                            4 => $cites->no_awb ?? '-',
+                            5 => $cites->tujuan ?? '-',
+                            6 => $cites->no_aju ?? '-',
+                            7 => $cites->no_pendaftaran ?? '-',
+                            8 => $cites->tanggal_pendaftaran ? date('d-M-y', strtotime($cites->tanggal_pendaftaran)) : '-',
+                        };
+                        $sheet->setCellValue("{$colLetter}{$row}", $value);
+                        $sheet->mergeCells("{$colLetter}{$row}:{$mergeEndColLetter}{$row}");
+                    }
+                    $colDataIndex += 3;
                 }
 
                 // Styling untuk header informasi CITES

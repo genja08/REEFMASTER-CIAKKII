@@ -21,17 +21,37 @@ class UserResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                //
-            ]);
+       return $form
+        ->schema([
+            Forms\Components\TextInput::make('name')
+                ->label('Nama')
+                ->required()
+                ->maxLength(255),
+
+            Forms\Components\TextInput::make('email')
+                ->label('Email')
+                ->email()
+                ->required()
+                ->unique(ignoreRecord: true)
+                ->maxLength(255),
+
+            Forms\Components\TextInput::make('password')
+                ->label('Password')
+                ->password()
+                ->required(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\CreateRecord)
+                ->dehydrateStateUsing(fn ($state) => !empty($state) ? bcrypt($state) : null)
+                ->maxLength(255)
+                ->visibleOn('create'),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('name')->label('Nama')->searchable(),
+                Tables\Columns\TextColumn::make('email')->label('Email')->searchable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Dibuat')->dateTime('d-m-Y H:i'),
             ])
             ->filters([
                 //
