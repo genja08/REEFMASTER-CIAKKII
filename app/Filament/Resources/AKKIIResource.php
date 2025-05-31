@@ -170,15 +170,18 @@ class AKKIIResource extends Resource
                     ->label('Tanggal Terbit')
                     ->disabled()
                     ->dehydrated(true)
+                    ->displayFormat('d/m/Y')
                     ->helperText('Otomatis terisi dari dokumen CITES'),
                     
                 DatePicker::make('tanggal_expired')
                     ->label('Tanggal Expired')
                     ->disabled()
                     ->dehydrated(true)
+                    ->displayFormat('d/m/Y')
                     ->helperText('Otomatis terisi dari dokumen CITES'),
                 DatePicker::make('tanggal_ekspor')
-                    ->label('Tanggal Ekspor'),
+                    ->label('Tanggal Ekspor')
+                    ->displayFormat('d/m/Y'),
                     
                 TextInput::make('no_awb')
                     ->label('No. AWB'),
@@ -190,7 +193,8 @@ class AKKIIResource extends Resource
                     ->label('No. Pendaftaran'),
                     
                 DatePicker::make('tanggal_pendaftaran')
-                    ->label('Tanggal Pendaftaran'),
+                    ->label('Tanggal Pendaftaran')
+                    ->displayFormat('d/m/Y'),
                 ]),
 
                 Repeater::make('items')
@@ -279,11 +283,19 @@ class AKKIIResource extends Resource
                             ->label('Jumlah Kirim')
                             ->numeric()
                             ->required()
+                            ->minValue(1)
                             ->reactive()
                             ->afterStateUpdated(function (Forms\Set $set, $state, Forms\Get $get, $livewire) {
                                 // Jika product_id ada, cari data CitesItem
                                 $productId = $get('product_id');
                                 $citesDocumentId = $get('../../cites_document_id');
+                                
+                                // Validasi nilai tidak boleh negatif
+                                if ((int)$state < 0) {
+                                    $livewire->notify('error', 'Jumlah kirim tidak boleh kurang dari 0.');
+                                    $set('qty_cites', 0);
+                                    $state = 0;
+                                }
                                 
                                 if ($productId && $citesDocumentId) {
                                     $citesItem = \App\Models\CitesItem::where('product_id', $productId)
@@ -296,7 +308,7 @@ class AKKIIResource extends Resource
                                         
                                         // Validasi jumlah kirim tidak melebihi qty_cites
                                         if ($qtySisa < 0) {
-                                            $livewire->notify('warning', "Jumlah kirim tidak boleh melebihi qty CITES ({$citesItem->qty_cites}).");
+                                            $livewire->notify('error', "Jumlah kirim tidak boleh melebihi qty CITES ({$citesItem->qty_cites}).");
                                             $set('qty_cites', $citesItem->qty_cites);
                                             $qtySisa = 0;
                                         }
@@ -393,9 +405,11 @@ class AKKIIResource extends Resource
                 Tables\Filters\Filter::make('tanggal_ekspor')
                     ->form([
                         Forms\Components\DatePicker::make('tanggal_ekspor_from')
-                            ->label('Dari Tanggal'),
+                            ->label('Dari Tanggal')
+                            ->displayFormat('d/m/Y'),
                         Forms\Components\DatePicker::make('tanggal_ekspor_to')
-                            ->label('Sampai Tanggal'),
+                            ->label('Sampai Tanggal')
+                            ->displayFormat('d/m/Y'),
                     ])
                     ->query(function ($query, array $data) {
                         return $query

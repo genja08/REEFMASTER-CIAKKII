@@ -35,6 +35,31 @@ class CreateAKKII extends CreateRecord
             return $validator->errors()->first();
         }
         
+        // Validasi items jika ada
+        if (isset($data['items']) && is_array($data['items'])) {
+            foreach ($data['items'] as $index => $item) {
+                // Validasi qty_cites tidak boleh negatif
+                if (isset($item['qty_cites']) && $item['qty_cites'] < 0) {
+                    $this->halt();
+                    $this->notify('error', 'Jumlah kirim tidak boleh kurang dari 0.');
+                    return 'Jumlah kirim tidak boleh kurang dari 0.';
+                }
+                
+                // Validasi qty_cites tidak boleh melebihi qty CITES yang tersedia
+                if (isset($item['product_id']) && isset($data['cites_document_id']) && isset($item['qty_cites'])) {
+                    $citesItem = \App\Models\CitesItem::where('product_id', $item['product_id'])
+                        ->where('cites_document_id', $data['cites_document_id'])
+                        ->first();
+                    
+                    if ($citesItem && $item['qty_cites'] > $citesItem->qty_cites) {
+                        $this->halt();
+                        $this->notify('error', "Jumlah kirim tidak boleh melebihi qty CITES ({$citesItem->qty_cites}).");
+                        return "Jumlah kirim tidak boleh melebihi qty CITES ({$citesItem->qty_cites}).";
+                    }
+                }
+            }
+        }
+        
         // Jika customer_id ada, isi data customer
         if (isset($data['customer_id'])) {
             $customer = \App\Models\DataCustomer::find($data['customer_id']);

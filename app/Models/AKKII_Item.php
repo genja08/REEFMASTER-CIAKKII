@@ -21,6 +21,22 @@ class AKKII_Item extends Model
     ];
     
     /**
+     * Get the validation rules that apply to the model.
+     *
+     * @return array
+     */
+    public static function rules($id = null)
+    {
+        return [
+            'akkii_id' => 'required|exists:akkiis,id',
+            'product_id' => 'required|exists:products,id',
+            'qty_cites' => 'required|integer|min:1',
+            'qty_sisa' => 'nullable|integer|min:0',
+            'qty_realisasi' => 'nullable|integer|min:0',
+        ];
+    }
+    
+    /**
      * Get the AKKII that owns this item.
      */
     public function akkii()
@@ -104,11 +120,53 @@ class AKKII_Item extends Model
         
         // When creating a new item
         static::creating(function ($item) use ($calculateQtySisa) {
+            // Validasi qty_cites tidak boleh negatif
+            if ($item->qty_cites < 0) {
+                $item->qty_cites = 0;
+            }
+            
+            // Validasi qty_cites tidak boleh melebihi qty CITES yang tersedia
+            if ($item->product_id && $item->akkii_id) {
+                $akkii = AKKII::find($item->akkii_id);
+                if ($akkii && $akkii->cites_document_id) {
+                    $citesItem = CitesItem::where('product_id', $item->product_id)
+                        ->where('cites_document_id', $akkii->cites_document_id)
+                        ->first();
+                    
+                    if ($citesItem && $item->qty_cites > $citesItem->qty_cites) {
+                        $item->qty_cites = $citesItem->qty_cites;
+                        \Illuminate\Support\Facades\Log::warning('AKKII_Item - qty_cites adjusted to match available qty in CITES document');
+                    }
+                }
+            }
+            
             $calculateQtySisa($item);
         });
         
         // When updating an existing item
         static::updating(function ($item) use ($calculateQtySisa) {
+            // Validasi qty_cites tidak boleh negatif
+            if ($item->qty_cites < 0) {
+                $item->qty_cites = 0;
+            }
+            
+            // Validasi qty_cites tidak boleh melebihi qty CITES yang tersedia
+            if ($item->isDirty('qty_cites') || $item->isDirty('product_id')) {
+                if ($item->product_id && $item->akkii_id) {
+                    $akkii = AKKII::find($item->akkii_id);
+                    if ($akkii && $akkii->cites_document_id) {
+                        $citesItem = CitesItem::where('product_id', $item->product_id)
+                            ->where('cites_document_id', $akkii->cites_document_id)
+                            ->first();
+                        
+                        if ($citesItem && $item->qty_cites > $citesItem->qty_cites) {
+                            $item->qty_cites = $citesItem->qty_cites;
+                            \Illuminate\Support\Facades\Log::warning('AKKII_Item - qty_cites adjusted to match available qty in CITES document');
+                        }
+                    }
+                }
+            }
+            
             // Only recalculate if qty_cites, qty_realisasi, or product_id has changed
             if ($item->isDirty('qty_cites') || $item->isDirty('qty_realisasi') || $item->isDirty('product_id')) {
                 $calculateQtySisa($item);

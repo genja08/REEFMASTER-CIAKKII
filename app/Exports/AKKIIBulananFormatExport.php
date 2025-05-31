@@ -119,14 +119,14 @@ class AKKIIBulananFormatExport implements FromCollection, WithEvents, WithTitle
                         $row = $citesInfoStartRow + $i;
                         $value = match ($i) {
                             0 => $cites->nomor_cites,
-                            1 => $cites->tanggal_terbit ? date('d-M-y', strtotime($cites->tanggal_terbit)) : '-',
-                            2 => $cites->tanggal_expired ? date('d-M-y', strtotime($cites->tanggal_expired)) : '-',
-                            3 => $cites->tanggal_ekspor ? date('d-M-y', strtotime($cites->tanggal_ekspor)) : '-',
+                            1 => $cites->tanggal_terbit ? date('d/m/Y', strtotime($cites->tanggal_terbit)) : '-',
+                            2 => $cites->tanggal_expired ? date('d/m/Y', strtotime($cites->tanggal_expired)) : '-',
+                            3 => $cites->tanggal_ekspor ? date('d/m/Y', strtotime($cites->tanggal_ekspor)) : '-',
                             4 => $cites->no_awb ?? '-',
                             5 => $cites->tujuan ?? '-',
                             6 => $cites->no_aju ?? '-',
                             7 => $cites->no_pendaftaran ?? '-',
-                            8 => $cites->tanggal_pendaftaran ? date('d-M-y', strtotime($cites->tanggal_pendaftaran)) : '-',
+                            8 => $cites->tanggal_pendaftaran ? date('d/m/Y', strtotime($cites->tanggal_pendaftaran)) : '-',
                         };
                         $sheet->setCellValue("{$colLetter}{$row}", $value);
                         $sheet->mergeCells("{$colLetter}{$row}:{$mergeEndColLetter}{$row}");

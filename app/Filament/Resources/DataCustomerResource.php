@@ -39,7 +39,18 @@ class DataCustomerResource extends Resource
             Repeater::make('discounts')
                 ->relationship('discounts')
                 ->schema([
-                    TextInput::make('jenis_discount')->label('Jenis Discount')->required(),
+                    Forms\Components\Select::make('jenis_discount')
+                        ->label('Jenis Discount')
+                        ->options([
+                            'HARD CORAL' => 'HARD CORAL',
+                            'SUBSTRAT' => 'SUBSTRAT',
+                            'RM ITEM' => 'RM ITEM',
+                            'ANEMONES' => 'ANEMONES',
+                            'BASE ROCK' => 'BASE ROCK',
+                            'MARINEFISH & INVERTS' => 'MARINEFISH & INVERTS',
+                            'FRESHWATER FISH & INVERTS' => 'FRESHWATER FISH & INVERTS',
+                        ])
+                        ->required(),
                     TextInput::make('discount')->label('Discount')->required(),
                 ])
                 ->defaultItems(1)

@@ -34,8 +34,8 @@ class CitesDocumentResource extends Resource
                         ->validationMessages([
                             'unique' => 'Nomor CITES ini sudah digunakan. Silakan gunakan nomor yang berbeda.',
                         ]),
-                    DatePicker::make('issued_date')->label('Tgl Terbit')->required(),
-                    DatePicker::make('expired_date')->label('Tgl Expired')->required(),
+                    DatePicker::make('issued_date')->label('Tgl Terbit')->required()->displayFormat('d/m/Y'),
+                    DatePicker::make('expired_date')->label('Tgl Expired')->required()->displayFormat('d/m/Y'),
                     TextInput::make('airport_of_arrival')->label('Airport of Arrival')->required(),
                     Select::make('customer_id')
                         ->label('Pilih Customer')
