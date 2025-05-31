@@ -16,13 +16,15 @@ use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 
 class AKKIIBulananFormatExport implements FromCollection, WithEvents, WithTitle
 {
-    protected $startDate;
-    protected $endDate;
+    protected $month;
+    protected $year;
+    protected $jenisAkkii;
 
-    public function __construct($startDate, $endDate)
+    public function __construct($month, $year, $jenisAkkii)
     {
-        $this->startDate = $startDate;
-        $this->endDate = $endDate;
+        $this->month = $month;
+        $this->year = $year;
+        $this->jenisAkkii = $jenisAkkii;
     }
 
     public function collection()
@@ -32,7 +34,7 @@ class AKKIIBulananFormatExport implements FromCollection, WithEvents, WithTitle
 
     public function title(): string
     {
-        return 'Data Bulanan Format';
+        return 'Data Bulanan Format ' . $this->jenisAkkii;
     }
 
     public function registerEvents(): array
@@ -51,11 +53,12 @@ class AKKIIBulananFormatExport implements FromCollection, WithEvents, WithTitle
                 $sheet->getPageMargins()->setLeft(0.5);
                 $sheet->getPageMargins()->setBottom(0.5);
 
-                // Ambil data CITES berdasarkan filter tanggal
+                // Ambil data CITES berdasarkan filter bulan dan tahun pada tanggal_ekspor
                 $citesGroups = AKKII::with(['items.product'])
-                    ->when($this->startDate, fn($q) => $q->whereDate('tanggal_terbit', '>=', $this->startDate))
-                    ->when($this->endDate, fn($q) => $q->whereDate('tanggal_terbit', '<=', $this->endDate))
-                    ->orderBy('tanggal_terbit', 'asc') // Ensure consistent order
+                    ->whereYear('tanggal_ekspor', $this->year)
+                    ->whereMonth('tanggal_ekspor', $this->month)
+                    ->where('jenis_akkii', $this->jenisAkkii) // Filter by jenis_akkii
+                    ->orderBy('tanggal_ekspor', 'asc') // Ensure consistent order
                     ->get();
 
                 // Ambil semua produk unik dari dokumen CITES, sorted by nama_latin
@@ -71,8 +74,11 @@ class AKKIIBulananFormatExport implements FromCollection, WithEvents, WithTitle
                 $lastColForTitles = Coordinate::stringFromColumnIndex($maxColIndexForTitles);
 
                 // Main Titles
-                $currentYear = $this->endDate ? date('Y', strtotime($this->endDate)) : date('Y');
-                $sheet->setCellValue('A1', 'REKAPITULASI REALISASI CITES BULANAN');
+                // $currentYear = $this->endDate ? date('Y', strtotime($this->endDate)) : date('Y'); // Old logic
+                $currentYear = $this->year; // Use the provided year
+                $monthName = \DateTime::createFromFormat('!m', $this->month)->format('F'); // Get month name
+                $jenisAkkiiTitle = strtoupper($this->jenisAkkii);
+                $sheet->setCellValue('A1', 'REKAPITULASI REALISASI CITES ' . $jenisAkkiiTitle . ' BULAN ' . strtoupper($monthName) . ' TAHUN ' . $currentYear);
                 $sheet->mergeCells("A1:{$lastColForTitles}1");
                 $sheet->getStyle('A1')->getFont()->setBold(true);
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -82,13 +88,13 @@ class AKKIIBulananFormatExport implements FromCollection, WithEvents, WithTitle
                 $sheet->getStyle('A2')->getFont()->setBold(true);
                 $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                $sheet->setCellValue('A3', 'TAHUN ' . $currentYear);
-                $sheet->mergeCells("A3:{$lastColForTitles}3");
-                $sheet->getStyle('A3')->getFont()->setBold(true);
+                // $sheet->setCellValue('A3', 'TAHUN ' . $currentYear); // This line is removed as year is in the main title
+                // $sheet->mergeCells("A3:{$lastColForTitles}3"); // This line is removed
+                // $sheet->getStyle('A3')->getFont()->setBold(true); // This line is removed
                 $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 
                 // Row offset for content after main titles and one blank row
-                $rowOffset = 5; // Start content from row 5 (1-3 titles, 4 blank)
+                $rowOffset = 4; // Start content from row 4 (1-2 titles, 3 blank)
 
                 // Buat header untuk informasi CITES
                 $citesHeaderLabels = [

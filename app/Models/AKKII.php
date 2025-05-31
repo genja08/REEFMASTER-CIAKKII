@@ -30,6 +30,7 @@ class AKKII extends Model
         'no_aju',
         'no_pendaftaran',
         'tanggal_pendaftaran',
+        'jenis_akkii',
     ];
     
     /**

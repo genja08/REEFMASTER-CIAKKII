@@ -17,6 +17,7 @@ class Product extends Model
         'jenis_coral',
         'nama_latin',
         'nama_lokal',
+        'jenis_produk',
     ];
     
     /**

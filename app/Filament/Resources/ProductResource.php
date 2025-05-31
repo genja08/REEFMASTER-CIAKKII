@@ -33,6 +33,15 @@ class ProductResource extends Resource
                     ])
                     ->required()
                     ->placeholder('Pilih Jenis Coral'),
+                
+                Forms\Components\Select::make('jenis_produk')
+                    ->label('Jenis Produk')
+                    ->options([
+                        'Alam' => 'Alam',
+                        'Transplan' => 'Transplan',
+                    ])
+                    ->required()
+                    ->placeholder('Pilih Jenis Produk'),
 
                 TextInput::make('nama_latin')
                     ->label('Nama Latin')
@@ -56,6 +65,10 @@ class ProductResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('jenis_coral')
                     ->label('Jenis Coral')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('jenis_produk')
+                    ->label('Jenis Produk')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('nama_latin')

@@ -34,8 +34,30 @@ class CitesDocumentResource extends Resource
                         ->validationMessages([
                             'unique' => 'Nomor CITES ini sudah digunakan. Silakan gunakan nomor yang berbeda.',
                         ]),
-                    DatePicker::make('issued_date')->label('Tgl Terbit')->required()->displayFormat('d/m/Y'),
-                    DatePicker::make('expired_date')->label('Tgl Expired')->required()->displayFormat('d/m/Y'),
+                    Forms\Components\Select::make('jenis_cites')
+                        ->label('Jenis CITES')
+                        ->options([
+                            'Alam' => 'Alam',
+                            'Transplan' => 'Transplan',
+                        ])
+                        ->required()
+                        ->placeholder('Pilih Jenis CITES'),
+                    DatePicker::make('issued_date')
+                        ->label('Tgl Terbit')
+                        ->required()
+                        ->displayFormat('d/m/Y')
+                        ->rules(['before_or_equal:expired_date'])
+                        ->validationMessages([
+                            'before_or_equal' => 'Tanggal Terbit tidak boleh lebih dari Tanggal Expired.',
+                        ]),
+                    DatePicker::make('expired_date')
+                        ->label('Tgl Expired')
+                        ->required()
+                        ->displayFormat('d/m/Y')
+                        ->rules(['after_or_equal:issued_date'])
+                        ->validationMessages([
+                            'after_or_equal' => 'Tanggal Expired tidak boleh sebelum Tanggal Terbit.',
+                        ]),
                     TextInput::make('airport_of_arrival')->label('Airport of Arrival')->required(),
                     Select::make('customer_id')
                         ->label('Pilih Customer')
@@ -114,9 +136,10 @@ class CitesDocumentResource extends Resource
         return $table
             ->columns([
                 // Tambahkan kolom sesuai kebutuhan
-                Tables\Columns\TextColumn::make('nomor')->label('Nomor CITES'),
-                Tables\Columns\TextColumn::make('customer.company_name')->label('Customer'),
-                Tables\Columns\TextColumn::make('issued_date')->label('Tgl Terbit')->date('d/m/Y'),
+                Tables\Columns\TextColumn::make('nomor')->label('Nomor CITES')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('jenis_cites')->label('Jenis CITES')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('customer.company_name')->label('Customer')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('issued_date')->label('Tgl Terbit')->date('d/m/Y')->sortable(),
                 Tables\Columns\TextColumn::make('expired_date')->label('Tgl Expired')->date('d/m/Y'),
             ])
             ->filters([

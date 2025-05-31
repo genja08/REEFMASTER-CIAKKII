@@ -13,6 +13,7 @@ class CitesDocument extends Model
         'expired_date',
         'airport_of_arrival',
         'customer_id',
+        'jenis_cites',
     ];
     
     /**

@@ -7,7 +7,8 @@ use App\Exports\AKKIIGlobalFormatExport;
 use App\Exports\AKKIISKWFormatExport;
 use App\Filament\Resources\AKKIIResource;
 use Filament\Actions;
-use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\DatePicker; // Keep for other exports if needed, or remove if not used elsewhere in this file
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
@@ -23,38 +24,52 @@ class ListAKKIIS extends ListRecords
         return [
             Actions\CreateAction::make(),
                 
-            // Tambahkan action untuk export Excel format Bulanan
-            Actions\Action::make('exportBulananFormat')
-                ->label('Export Format Bulanan')
+            // Export Format Bulanan (Alam)
+            Actions\Action::make('exportBulananAlamFormat')
+                ->label('Export Bulanan (Alam)')
                 ->icon('heroicon-o-document-arrow-down')
-                ->color('warning')
+                ->color('info') // Changed color for distinction
                 ->form([
-                    DatePicker::make('start_date')
-                        ->label('Tanggal Terbit Awal')
-                        ->default(now()->startOfMonth()),
-                    
-                    DatePicker::make('end_date')
-                        ->label('Tanggal Terbit Akhir')
-                        ->default(now()->endOfMonth()),
-                    
-                    TextInput::make('report_title')
-                        ->label('Judul Laporan')
-                        ->default('Rekapitulasi Realisasi CITES')
+                    Select::make('month')
+                        ->label('Bulan Ekspor')
+                        ->options([
+                            '1' => 'Januari',
+                            '2' => 'Februari',
+                            '3' => 'Maret',
+                            '4' => 'April',
+                            '5' => 'Mei',
+                            '6' => 'Juni',
+                            '7' => 'Juli',
+                            '8' => 'Agustus',
+                            '9' => 'September',
+                            '10' => 'Oktober',
+                            '11' => 'November',
+                            '12' => 'Desember',
+                        ])
+                        ->default(now()->month)
                         ->required(),
+                    TextInput::make('year')
+                        ->label('Tahun Ekspor')
+                        ->numeric()
+                        ->default(now()->year)
+                        ->required()
+                        ->minValue(2000)
+                        ->maxValue(2100),
                 ])
                 ->action(function (array $data) {
+                    $month = $data['month'];
+                    $year = $data['year'];
+                    $jenisAkkii = 'Alam'; // Specify type
+                    $monthName = \DateTime::createFromFormat('!m', $month)->format('F');
+
                     // Generate filename
-                    $filename = Str::slug($data['report_title']) . '-bulanan-' . 
-                        ($data['start_date'] ? date('d-m-Y', strtotime($data['start_date'])) : 'all') . 
-                        '-to-' . 
-                        ($data['end_date'] ? date('d-m-Y', strtotime($data['end_date'])) : 'all') . 
-                        '.xlsx';
+                    $filename = 'rekap-akkii-bulanan-alam-' . strtolower($monthName) . '-' . $year . '.xlsx';
                     
                     // Create export instance
                     $export = new AKKIIBulananFormatExport(
-                        $data['start_date'] ?? null,
-                        $data['end_date'] ?? null,
-                        $data['report_title'] ?? 'Rekapitulasi Realisasi CITES'
+                        $month,
+                        $year,
+                        $jenisAkkii
                     );
                     
                     // Download file
@@ -63,22 +78,85 @@ class ListAKKIIS extends ListRecords
                         Notification::make()
                             ->success()
                             ->title('Export berhasil')
-                            ->body('File Excel Format Bulanan sedang diunduh')
+                            ->body('File Excel Format Bulanan (Alam) sedang diunduh')
                             ->send();
                             
                         return Excel::download($export, $filename);
                     } catch (\Exception $e) {
-                        // Log error
-                        \Illuminate\Support\Facades\Log::error('Excel export error: ' . $e->getMessage());
-                        
-                        // Show error notification
+                        \Illuminate\Support\Facades\Log::error('Excel export error (Alam): ' . $e->getMessage());
                         Notification::make()
                             ->danger()
-                            ->title('Error exporting file')
+                            ->title('Error exporting file (Alam)')
                             ->body($e->getMessage())
                             ->send();
-                        
-                        // Return null to prevent redirect
+                        return null;
+                    }
+                }),
+
+            // Export Format Bulanan (Transplan)
+            Actions\Action::make('exportBulananTransplanFormat')
+                ->label('Export Bulanan (Transplan)')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('warning') // Changed color for distinction
+                ->form([
+                    Select::make('month')
+                        ->label('Bulan Ekspor')
+                        ->options([
+                            '1' => 'Januari',
+                            '2' => 'Februari',
+                            '3' => 'Maret',
+                            '4' => 'April',
+                            '5' => 'Mei',
+                            '6' => 'Juni',
+                            '7' => 'Juli',
+                            '8' => 'Agustus',
+                            '9' => 'September',
+                            '10' => 'Oktober',
+                            '11' => 'November',
+                            '12' => 'Desember',
+                        ])
+                        ->default(now()->month)
+                        ->required(),
+                    TextInput::make('year')
+                        ->label('Tahun Ekspor')
+                        ->numeric()
+                        ->default(now()->year)
+                        ->required()
+                        ->minValue(2000)
+                        ->maxValue(2100),
+                ])
+                ->action(function (array $data) {
+                    $month = $data['month'];
+                    $year = $data['year'];
+                    $jenisAkkii = 'Transplan'; // Specify type
+                    $monthName = \DateTime::createFromFormat('!m', $month)->format('F');
+
+                    // Generate filename
+                    $filename = 'rekap-akkii-bulanan-transplan-' . strtolower($monthName) . '-' . $year . '.xlsx';
+                    
+                    // Create export instance
+                    $export = new AKKIIBulananFormatExport(
+                        $month,
+                        $year,
+                        $jenisAkkii
+                    );
+                    
+                    // Download file
+                    try {
+                        Notification::make()
+                            ->success()
+                            ->title('Export berhasil')
+                            ->body('File Excel Format Bulanan (Transplan) sedang diunduh')
+                            ->send();
+                            
+                        return Excel::download($export, $filename);
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error('Excel export error (Transplan): ' . $e->getMessage());
+                        Notification::make()
+                            ->danger()
+                            ->title('Error exporting file (Transplan)')
+                            ->body($e->getMessage())
+                            ->send();
                         return null;
                     }
                 }),

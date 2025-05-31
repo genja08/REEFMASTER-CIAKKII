@@ -52,6 +52,7 @@ class AKKIIResource extends Resource
                                 $set('tanggal_expired', $cites->expired_date ?? null);
                                 $set('airport_of_arrival', $cites->airport_of_arrival ?? '');
                                 $set('customer_id', $cites->customer_id ?? null);
+                                $set('jenis_akkii', $cites->jenis_cites ?? null); // Set jenis_akkii from CITES
                                 
                                 // Jika customer_id ada, trigger afterStateUpdated untuk customer_id
                                 if ($cites->customer_id) {
@@ -104,7 +105,11 @@ class AKKIIResource extends Resource
                             \Illuminate\Support\Facades\Log::warning('No customer ID provided');
                         }
                     }),
-                    
+                TextInput::make('jenis_akkii')
+                    ->label('Jenis AKKII')
+                    ->disabled()
+                    ->dehydrated(true)
+                    ->helperText('Otomatis terisi dari jenis dokumen CITES'),
                 TextInput::make('nomor_cites')
                     ->label('Nomor CITES')
                     ->required()
@@ -210,16 +215,20 @@ class AKKIIResource extends Resource
                             ->reactive()
                             ->options(function (Forms\Get $get) {
                                 $citesDocumentId = $get('../../cites_document_id');
+                                $jenisAkkii = $get('../../jenis_akkii'); // Get jenis_akkii from the main form
                                 
-                                if ($citesDocumentId) {
+                                if ($citesDocumentId && $jenisAkkii) {
                                     // Dapatkan semua product_id dari CitesItem yang terkait dengan cites_document_id
                                     $citesItems = \App\Models\CitesItem::where('cites_document_id', $citesDocumentId)->get();
                                     
                                     if ($citesItems->isNotEmpty()) {
-                                        $productIds = $citesItems->pluck('product_id')->toArray();
+                                        $productIdsInCites = $citesItems->pluck('product_id')->toArray();
                                         
-                                        // Dapatkan nama produk berdasarkan product_id
-                                        $products = \App\Models\Product::whereIn('id', $productIds)->pluck('nama_latin', 'id')->toArray();
+                                        // Dapatkan nama produk berdasarkan product_id yang ada di CITES dan cocok jenis_produk nya
+                                        $products = \App\Models\Product::whereIn('id', $productIdsInCites)
+                                            ->where('jenis_produk', $jenisAkkii) // Filter by jenis_produk
+                                            ->pluck('nama_latin', 'id')
+                                            ->toArray();
                                         
                                         return $products;
                                     }
@@ -370,7 +379,10 @@ class AKKIIResource extends Resource
                     ->label('Dokumen CITES')
                     ->searchable()
                     ->sortable(),
-                    
+                Tables\Columns\TextColumn::make('jenis_akkii')
+                    ->label('Jenis AKKII')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('customer.company_name')
                     ->label('Customer')
                     ->searchable()
@@ -401,7 +413,12 @@ class AKKIIResource extends Resource
                     ->relationship('customer', 'company_name')
                     ->searchable()
                     ->preload(),
-                    
+                Tables\Filters\SelectFilter::make('jenis_akkii')
+                    ->label('Jenis AKKII')
+                    ->options([
+                        'Alam' => 'Alam',
+                        'Transplan' => 'Transplan',
+                    ]),
                 Tables\Filters\Filter::make('tanggal_ekspor')
                     ->form([
                         Forms\Components\DatePicker::make('tanggal_ekspor_from')
