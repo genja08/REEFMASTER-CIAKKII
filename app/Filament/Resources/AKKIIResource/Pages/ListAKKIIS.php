@@ -6,18 +6,35 @@ use App\Exports\AKKIIBulananFormatExport;
 use App\Exports\AKKIIGlobalFormatExport;
 use App\Exports\AKKIISKWFormatExport;
 use App\Filament\Resources\AKKIIResource;
+use App\Models\AKKII;
 use Filament\Actions;
 use Filament\Forms\Components\DatePicker; // Keep for other exports if needed, or remove if not used elsewhere in this file
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Components\Tab;
+use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Str;
 
 class ListAKKIIS extends ListRecords
 {
     protected static string $resource = AKKIIResource::class;
+    
+    public function getTabs(): array
+    {
+        return [
+            'all' => Tab::make('Semua AKKII')
+                ->badge(AKKII::query()->count()),
+            'alam' => Tab::make('Alam')
+                ->badge(AKKII::query()->where('jenis_akkii', 'Alam')->count())
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('jenis_akkii', 'Alam')),
+            'transplan' => Tab::make('Transplan')
+                ->badge(AKKII::query()->where('jenis_akkii', 'Transplan')->count())
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('jenis_akkii', 'Transplan')),
+        ];
+    }
 
     protected function getHeaderActions(): array
     {
@@ -179,10 +196,22 @@ class ListAKKIIS extends ListRecords
                         ->label('Judul Laporan')
                         ->default('Rekapitulasi Realisasi CITES')
                         ->required(),
+                        
+                    Select::make('jenis_akkii')
+                        ->label('Jenis AKKII')
+                        ->options([
+                            'Alam' => 'Alam',
+                            'Transplan' => 'Transplan',
+                        ])
+                        ->placeholder('Semua Jenis'),
                 ])
                 ->action(function (array $data) {
+                    // Get jenis_akkii for filename
+                    $jenisAkkii = $data['jenis_akkii'] ?? null;
+                    $jenisText = $jenisAkkii ? '-' . strtolower($jenisAkkii) : '';
+                    
                     // Generate filename
-                    $filename = Str::slug($data['report_title']) . '-global-' . 
+                    $filename = Str::slug($data['report_title']) . '-global' . $jenisText . '-' . 
                         ($data['start_date'] ? date('d-m-Y', strtotime($data['start_date'])) : 'all') . 
                         '-to-' . 
                         ($data['end_date'] ? date('d-m-Y', strtotime($data['end_date'])) : 'all') . 
@@ -192,16 +221,18 @@ class ListAKKIIS extends ListRecords
                     $export = new AKKIIGlobalFormatExport(
                         $data['start_date'] ?? null,
                         $data['end_date'] ?? null,
-                        $data['report_title'] ?? 'Rekapitulasi Realisasi CITES'
+                        $data['report_title'] ?? 'Rekapitulasi Realisasi CITES',
+                        $jenisAkkii
                     );
                     
                     // Download file
                     try {
                         // Show success notification before download
+                        $jenisText = $jenisAkkii ? " ({$jenisAkkii})" : "";
                         Notification::make()
                             ->success()
                             ->title('Export berhasil')
-                            ->body('File Excel Format Global sedang diunduh')
+                            ->body("File Excel Format Global{$jenisText} sedang diunduh")
                             ->send();
                             
                         return Excel::download($export, $filename);
@@ -239,10 +270,22 @@ class ListAKKIIS extends ListRecords
                         ->label('Judul Laporan')
                         ->default('Rekapitulasi Realisasi CITES')
                         ->required(),
+                        
+                    Select::make('jenis_akkii')
+                        ->label('Jenis AKKII')
+                        ->options([
+                            'Alam' => 'Alam',
+                            'Transplan' => 'Transplan',
+                        ])
+                        ->placeholder('Semua Jenis'),
                 ])
                 ->action(function (array $data) {
+                    // Get jenis_akkii for filename
+                    $jenisAkkii = $data['jenis_akkii'] ?? null;
+                    $jenisText = $jenisAkkii ? '-' . strtolower($jenisAkkii) : '';
+                    
                     // Generate filename
-                    $filename = Str::slug($data['report_title']) . '-skw-' . 
+                    $filename = Str::slug($data['report_title']) . '-skw' . $jenisText . '-' . 
                         ($data['start_date'] ? date('d-m-Y', strtotime($data['start_date'])) : 'all') . 
                         '-to-' . 
                         ($data['end_date'] ? date('d-m-Y', strtotime($data['end_date'])) : 'all') . 
@@ -252,16 +295,18 @@ class ListAKKIIS extends ListRecords
                     $export = new AKKIISKWFormatExport(
                         $data['start_date'] ?? null,
                         $data['end_date'] ?? null,
-                        $data['report_title'] ?? 'Rekapitulasi Realisasi CITES'
+                        $data['report_title'] ?? 'Rekapitulasi Realisasi CITES',
+                        $jenisAkkii
                     );
                     
                     // Download file
                     try {
                         // Show success notification before download
+                        $jenisText = $jenisAkkii ? " ({$jenisAkkii})" : "";
                         Notification::make()
                             ->success()
                             ->title('Export berhasil')
-                            ->body('File Excel Format SKW sedang diunduh')
+                            ->body("File Excel Format SKW{$jenisText} sedang diunduh")
                             ->send();
                             
                         return Excel::download($export, $filename);

@@ -227,6 +227,7 @@ class AKKIIResource extends Resource
                                         // Dapatkan nama produk berdasarkan product_id yang ada di CITES dan cocok jenis_produk nya
                                         $products = \App\Models\Product::whereIn('id', $productIdsInCites)
                                             ->where('jenis_produk', $jenisAkkii) // Filter by jenis_produk
+                                            ->orderBy('nama_latin', 'asc') // Urutkan berdasarkan nama latin
                                             ->pluck('nama_latin', 'id')
                                             ->toArray();
                                         

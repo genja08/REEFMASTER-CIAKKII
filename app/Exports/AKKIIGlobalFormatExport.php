@@ -20,12 +20,14 @@ class AKKIIGlobalFormatExport implements FromCollection, WithEvents, WithTitle
     protected $startDate;
     protected $endDate;
     protected $reportTitle;
+    protected $jenisAkkii;
 
-    public function __construct($startDate = null, $endDate = null, $reportTitle = 'PT. BANYU BIRU SENTOSA') // Changed default title
+    public function __construct($startDate = null, $endDate = null, $reportTitle = 'PT. BANYU BIRU SENTOSA', $jenisAkkii = null) // Added jenisAkkii parameter
     {
         $this->startDate = $startDate;
         $this->endDate = $endDate;
         $this->reportTitle = $reportTitle; // This will be the main title "PT. BANYU BIRU SENTOSA"
+        $this->jenisAkkii = $jenisAkkii; // Store the AKKII type
     }
 
     /**
@@ -68,7 +70,8 @@ class AKKIIGlobalFormatExport implements FromCollection, WithEvents, WithTitle
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // Subtitle 1
-                $sheet->setCellValue('A2', 'LAPORAN REALISASI CITES');
+                $jenisText = $this->jenisAkkii ? " " . strtoupper($this->jenisAkkii) : "";
+                $sheet->setCellValue('A2', "LAPORAN REALISASI CITES{$jenisText}");
                 $sheet->mergeCells('A2:J2');
                 $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(12);
                 $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -110,6 +113,11 @@ class AKKIIGlobalFormatExport implements FromCollection, WithEvents, WithTitle
                 $query = AKKII::with(['items']) // Assuming 'items' relation exists
                     ->whereHas('items') // Ensure AKKII has items to display
                     ->orderBy('tanggal_terbit', 'asc'); // Or any other relevant order
+                    
+                // Filter by jenis_akkii if specified
+                if ($this->jenisAkkii) {
+                    $query->where('jenis_akkii', $this->jenisAkkii);
+                }
 
                 if ($this->startDate) {
                     $query->whereDate('tanggal_terbit', '>=', $this->startDate);

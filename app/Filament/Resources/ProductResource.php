@@ -81,7 +81,19 @@ class ProductResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('jenis_produk')
+                    ->label('Jenis Produk')
+                    ->options([
+                        'Alam' => 'Alam',
+                        'Transplan' => 'Transplan',
+                    ]),
+                Tables\Filters\SelectFilter::make('jenis_coral')
+                    ->label('Jenis Coral')
+                    ->options([
+                        'Hard Coral' => 'Hard Coral',
+                        'Substrat' => 'Substrat',
+                        'Live Rock' => 'Live Rock',
+                    ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

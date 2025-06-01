@@ -20,12 +20,14 @@ class AKKIISKWFormatExport implements FromCollection, WithEvents, WithTitle
     protected $startDate;
     protected $endDate;
     protected $reportTitle;
+    protected $jenisAkkii;
 
-    public function __construct($startDate = null, $endDate = null, $reportTitle = 'Rekapitulasi Realisasi CITES')
+    public function __construct($startDate = null, $endDate = null, $reportTitle = 'Rekapitulasi Realisasi CITES', $jenisAkkii = null)
     {
         $this->startDate = $startDate;
         $this->endDate = $endDate;
         $this->reportTitle = $reportTitle;
+        $this->jenisAkkii = $jenisAkkii;
     }
 
     /**
@@ -61,7 +63,8 @@ class AKKIISKWFormatExport implements FromCollection, WithEvents, WithTitle
                 $sheet->getPageSetup()->setFitToHeight(0);
                 
                 // Set title
-                $sheet->setCellValue('A1', strtoupper($this->reportTitle));
+                $jenisText = $this->jenisAkkii ? " " . strtoupper($this->jenisAkkii) : "";
+                $sheet->setCellValue('A1', strtoupper($this->reportTitle) . $jenisText);
                 $sheet->mergeCells('A1:J1');
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -99,6 +102,11 @@ class AKKIISKWFormatExport implements FromCollection, WithEvents, WithTitle
                     ->whereHas('customer')
                     ->orderBy('customer_id')
                     ->orderBy('tanggal_terbit', 'asc');
+                
+                // Filter by jenis_akkii if specified
+                if ($this->jenisAkkii) {
+                    $query->where('jenis_akkii', $this->jenisAkkii);
+                }
 
                 if ($this->startDate) {
                     $query->whereDate('tanggal_terbit', '>=', $this->startDate);

@@ -72,7 +72,20 @@ class CitesDocumentResource extends Resource
                     ->schema([
                         Select::make('product_id')
                             ->label('Product')
-                            ->relationship(name: 'product', titleAttribute: 'nama_latin') // Menggunakan relasi dan nama_latin
+                            ->options(function (Forms\Get $get) {
+                                $jenisCites = $get('../../jenis_cites');
+                                
+                                if ($jenisCites) {
+                                    return \App\Models\Product::where('jenis_produk', $jenisCites)
+                                        ->orderBy('nama_latin', 'asc')
+                                        ->pluck('nama_latin', 'id')
+                                        ->toArray();
+                                }
+                                
+                                return \App\Models\Product::orderBy('nama_latin', 'asc')
+                                    ->pluck('nama_latin', 'id')
+                                    ->toArray();
+                            })
                             ->placeholder('Select a product')
                             ->reactive() // Membuat field reactive
                             ->afterStateUpdated(function (Forms\Set $set, $state) {
@@ -143,7 +156,37 @@ class CitesDocumentResource extends Resource
                 Tables\Columns\TextColumn::make('expired_date')->label('Tgl Expired')->date('d/m/Y'),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('jenis_cites')
+                    ->label('Jenis CITES')
+                    ->options([
+                        'Alam' => 'Alam',
+                        'Transplan' => 'Transplan',
+                    ]),
+                Tables\Filters\Filter::make('issued_date')
+                    ->form([
+                        Forms\Components\DatePicker::make('issued_date_from')
+                            ->label('Dari Tanggal Terbit')
+                            ->displayFormat('d/m/Y'),
+                        Forms\Components\DatePicker::make('issued_date_to')
+                            ->label('Sampai Tanggal Terbit')
+                            ->displayFormat('d/m/Y'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when(
+                                $data['issued_date_from'],
+                                fn ($query) => $query->whereDate('issued_date', '>=', $data['issued_date_from'])
+                            )
+                            ->when(
+                                $data['issued_date_to'],
+                                fn ($query) => $query->whereDate('issued_date', '<=', $data['issued_date_to'])
+                            );
+                    }),
+                Tables\Filters\SelectFilter::make('customer_id')
+                    ->label('Customer')
+                    ->relationship('customer', 'company_name')
+                    ->searchable()
+                    ->preload(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
